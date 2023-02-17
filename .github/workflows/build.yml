@@ -1,38 +1,29 @@
-name: Deploy GitHub Pages
+name: Git-pages
 
 on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  front-build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          persist-credentials: false
+        uses: actions/checkout@v1
 
-      - uses: actions/cache@v2.1.4
-        id: node-modules
-        with:
-          path: node_modules/
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
-
-      - name: Install Deps
-        if: steps.node-modules.outputs.cache-hit != 'true'
-        run: yarn install --frozen-lockfile
-
-      - name: Build Template
-        run: yarn run build
+      - name: Build
+        run: |
+          npm --prefix front-app install
+          npm --prefix front-app run-script build
+        env:
+          REACT_DEV_SERVER_URL: ${{ secrets.REACT_DEV_SERVER_URL }},
+          REACT_DEV_FRONT_APP_URL: ${{ secrets.REACT_DEV_FRONT_APP_URL }}
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@releases/v3
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_KEY }}
           BRANCH: gh-pages
-          FOLDER: ./dist
+          FOLDER: github-pages/dist
